@@ -1,22 +1,64 @@
-from PIL import Image
+# handler.py
+
 import runpod
-import io
-import base64
+import requests
+import tempfile
+import cv2
+from PIL import Image
+from transformers import BlipProcessor, BlipForConditionalGeneration
+import torch
+import os
 
-def analyze_video_frames(job):
-    # job["input"] should include "frames": [base64_images]
-    input_data = job["input"]
-    frames = input_data.get("frames", [])
-    
-    results = []
-    for i, frame_data in enumerate(frames):
-        try:
-            image_bytes = base64.b64decode(frame_data)
-            image = Image.open(io.BytesIO(image_bytes))
-            results.append(f"Frame {i+1}: Detected content placeholder")
-        except Exception as e:
-            results.append(f"Frame {i+1}: Error - {str(e)}")
+# Load BLIP2 model and processor
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to("cuda" if torch.cuda.is_available() else "cpu")
 
-    return { "results": results }
+def download_video(video_url):
+    response = requests.get(video_url, stream=True)
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    for chunk in response.iter_content(chunk_size=8192):
+        temp_file.write(chunk)
+    temp_file.close()
+    return temp_file.name
 
-runpod.serverless.start({"handler": analyze_video_frames})
+def extract_frames(video_path, frame_interval=30):
+    cap = cv2.VideoCapture(video_path)
+    frame_count = 0
+    frames = []
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        if frame_count % frame_interval == 0:
+            # Convert frame to PIL Image
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(image)
+            frames.append(pil_image)
+        frame_count += 1
+
+    cap.release()
+    return frames
+
+def caption_frames(frames):
+    captions = []
+    for idx, image in enumerate(frames):
+        inputs = processor(images=image, return_tensors="pt").to(model.device)
+        out = model.generate(**inputs)
+        caption = processor.decode(out[0], skip_special_tokens=True)
+        captions.append({"frame": idx, "caption": caption})
+    return captions
+
+def handler(event):
+    video_url = event.get("input", {}).get("video_url")
+    if not video_url:
+        return {"error": "Missing 'video_url' in input."}
+
+    video_path = download_video(video_url)
+    frames = extract_frames(video_path, frame_interval=30)  # every 30th frame (~1 per second for 30fps)
+    captions = caption_frames(frames)
+    os.remove(video_path)
+
+    return {"captions": captions}
+
+runpod.serverless.start({"handler": handler})
