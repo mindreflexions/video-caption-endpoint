@@ -1,0 +1,10 @@
+{
+  "title": "Video Caption Endpoint",
+  "description": "Extracts frame-by-frame visual descriptions from uploaded videos using BLIP2.",
+  "type": "serverless",
+  "category": "video",
+  "config": {
+    "runOn": "GPU",
+    "containerDiskInGb": 20
+  }
+}
