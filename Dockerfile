@@ -1,17 +1,17 @@
-FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+# Use a lightweight Python base image
+FROM python:3.10-slim
 
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    libgl1 \
-    && rm -rf /var/lib/apt/lists/*
+# Install required system packages (libGL needed for OpenCV)
+RUN apt-get update && apt-get install -y libgl1-mesa-glx
 
+# Set the working directory
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+# Copy all files into the container
+COPY . /app
 
-COPY . .
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Define the entry point
 CMD ["python", "handler.py"]
