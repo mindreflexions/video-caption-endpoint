@@ -7,11 +7,10 @@ RUN apt-get update && \
     apt-get install -y ffmpeg libsm6 libxext6 libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY . .
+COPY requirements.txt ./
+RUN pip install --upgrade pip && pip install numpy<2.0.0
+RUN pip install -r requirements.txt
 
-# Pin numpy for compatibility
-RUN pip install --upgrade pip && \
-    pip install numpy<2.0.0 && \
-    pip install -r requirements.txt
+COPY . .
 
 CMD ["python", "-u", "handler.py"]
