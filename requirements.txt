@@ -1,5 +1,6 @@
-fastapi
-uvicorn[standard]
-transformers==4.41.1
-torch
-pillow
+numpy<2.0.0
+torch==2.2.0
+transformers==4.39.0
+opencv-python-headless==4.9.0.80
+Pillow==10.3.0
+runpod
