@@ -1,0 +1,3 @@
+name: video-caption-endpoint
+description: Extracts frame captions from uploaded video frames
+handler: handler.analyze_video_frames
