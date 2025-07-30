@@ -1,16 +1,19 @@
 FROM python:3.10-slim
 
-# Install system dependencies (ffmpeg, etc.)
-RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (ffmpeg needed for video handling)
+RUN apt-get update && \
+    apt-get install -y ffmpeg git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy files
+# Copy code
 COPY . /app
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the handler
+# Start handler
 CMD ["python", "handler.py"]
