@@ -5,15 +5,15 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsm6 \
     libxext6 \
-    libgl1 \
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY . .
