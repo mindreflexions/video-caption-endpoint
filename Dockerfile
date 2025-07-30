@@ -1,17 +1,35 @@
-# Use a lightweight Python base image
-FROM python:3.10-slim
+FROM nvidia/cuda:12.2.0-cudnn8-runtime-ubuntu22.04
 
-# Install required system packages (libGL needed for OpenCV)
-RUN apt-get update && apt-get install -y libgl1-mesa-glx
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    TZ=Etc/UTC
 
-# Set the working directory
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    python3.10 \
+    python3-pip \
+    python3.10-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3.10 default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip
+
+# Install python dependencies
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy project code
+COPY . /app
 WORKDIR /app
 
-# Copy all files into the container
-COPY . /app
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Define the entry point
+# Command to start the handler
 CMD ["python", "handler.py"]
