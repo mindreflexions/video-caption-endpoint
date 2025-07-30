@@ -1,51 +1,18 @@
-# Base image: CUDA 11.8 with cuDNN8, Ubuntu 20.04, Python 3.8
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+# Use official PyTorch image with CUDA and Python 3.10+
+FROM pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime
 
-# Avoid user prompts
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Update and install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    python3-dev \
-    git \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    wget \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Symlink python3 to python for compatibility
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# Upgrade pip and setuptools
-RUN python -m pip install --upgrade pip setuptools
-
-# (Optional) Set a working directory
+# Set working directory
 WORKDIR /app
 
-# Copy your code into the container
-COPY . /app
+# Copy requirements.txt and install dependencies
+COPY requirements.txt ./
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Install PyTorch with CUDA and core Python packages
-RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+# Copy all your app code into the image
+COPY . .
 
-# Install Hugging Face Transformers, Datasets, and other requirements
-RUN pip install \
-    transformers \
-    diffusers \
-    accelerate \
-    opencv-python \
-    pillow \
-    requests \
-    tqdm \
-    fastapi \
-    uvicorn \
-    git+https://github.com/huggingface/peft.git
+# Expose port for FastAPI (adjust if needed)
+EXPOSE 8000
 
-# (Optional) If you have a requirements.txt, install it last for caching
-# COPY requirements.txt .
-# RUN pip install -r requirements.txt
-
-# Default command (adjust if you use FastAPI, Flask, etc.)
-CMD ["python", "handler.py"]
+# Run your FastAPI app (replace main:app if your entrypoint is different)
+CMD ["uvicorn", "handler:app", "--host", "0.0.0.0", "--port", "8000"]
