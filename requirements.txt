@@ -3,6 +3,7 @@ transformers==4.54.1
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
 numpy<2.0
+opencv-python-headless
 pillow
 ffmpeg-python
 runpod
